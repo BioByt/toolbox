@@ -7,6 +7,9 @@ pub struct DbConfig {
     min_connections: u32,
     max_connections: u32,
     idle_timeout: Duration,
+    username: String,
+    password: String,
+    database: String,
 }
 
 impl DbConfig {
@@ -17,17 +20,26 @@ impl DbConfig {
         let max_connections = env::var(format!("{prefix}MAX_CONNECTIONS"))?.parse::<u32>()?;
         let idle_timeout =
             Duration::from_secs(env::var(format!("{prefix}IDLE_TIMEOUT"))?.parse::<u64>()?);
+        let username = env::var(format!("{prefix}USERNAME"))?;
+        let password = env::var(format!("{prefix}PASSWORD"))?;
+        let database = env::var(format!("{prefix}DATABASE"))?;
         Ok(Self {
             host,
             port,
             min_connections,
             max_connections,
             idle_timeout,
+            username,
+            password,
+            database,
         })
     }
 
     pub fn get_database_url(&self) -> String {
-        format!("{}:{}", self.host, self.port)
+        format!(
+            "postgresql://{}:{}@{}:{}/{}",
+            self.username, self.password, self.host, self.port, self.database
+        )
     }
 
     pub fn get_minimum_connections(&self) -> u32 {
@@ -48,5 +60,13 @@ impl DbConfig {
 
     pub fn get_port(&self) -> u16 {
         self.port
+    }
+
+    pub fn get_username(&self) -> &str {
+        &self.username
+    }
+
+    pub fn get_password(&self) -> &str {
+        &self.password
     }
 }
