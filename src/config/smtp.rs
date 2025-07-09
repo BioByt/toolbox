@@ -1,5 +1,7 @@
 use std::env;
 
+use super::{ConfigError, ConfigResult};
+
 #[derive(Debug)]
 pub struct SmtpConfig {
     host: String,
@@ -11,13 +13,21 @@ pub struct SmtpConfig {
 }
 
 impl SmtpConfig {
-    pub fn from_env(prefix: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let host = env::var(format!("{prefix}HOST"))?;
-        let port = env::var(format!("{prefix}PORT"))?.parse::<u16>()?;
-        let username = env::var(format!("{prefix}USERNAME"))?;
-        let password = env::var(format!("{prefix}PASSWORD"))?;
-        let from_email = env::var(format!("{prefix}FROM_EMAIL"))?;
-        let from_name = env::var(format!("{prefix}FROM_NAME"))?;
+    pub fn with_prefix(prefix: &str) -> ConfigResult<Self> {
+        let host = env::var(format!("{prefix}HOST"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}HOST' not found")))?;
+        let port = env::var(format!("{prefix}PORT"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}PORT' not found")))?
+            .parse::<u16>()
+            .map_err(|_| ConfigError::Smtp(format!("Invalid Port: {prefix}PORT")))?;
+        let username = env::var(format!("{prefix}USERNAME"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}USERNAME' not found")))?;
+        let password = env::var(format!("{prefix}PASSWORD"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}PASSWORD' not found")))?;
+        let from_email = env::var(format!("{prefix}FROM_EMAIL"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}FROM_EMAIL' not found")))?;
+        let from_name = env::var(format!("{prefix}FROM_NAME"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}FROM_NAME' not found")))?;
         Ok(Self {
             host,
             port,

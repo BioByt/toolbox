@@ -1,5 +1,7 @@
 use std::{env, net::IpAddr, time::Duration};
 
+use super::{ConfigError, ConfigResult};
+
 #[derive(Debug)]
 pub struct DbConfig {
     host: IpAddr,
@@ -13,16 +15,35 @@ pub struct DbConfig {
 }
 
 impl DbConfig {
-    pub fn from_env(prefix: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let host = env::var(format!("{prefix}HOST"))?.parse::<IpAddr>()?;
-        let port = env::var(format!("{prefix}PORT"))?.parse::<u16>()?;
-        let min_connections = env::var(format!("{prefix}MIN_CONNECTIONS"))?.parse::<u32>()?;
-        let max_connections = env::var(format!("{prefix}MAX_CONNECTIONS"))?.parse::<u32>()?;
-        let idle_timeout =
-            Duration::from_secs(env::var(format!("{prefix}IDLE_TIMEOUT"))?.parse::<u64>()?);
-        let username = env::var(format!("{prefix}USERNAME"))?;
-        let password = env::var(format!("{prefix}PASSWORD"))?;
-        let database = env::var(format!("{prefix}DATABASE"))?;
+    pub fn with_prefix(prefix: &str) -> ConfigResult<Self> {
+        let host = env::var(format!("{prefix}HOST"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}HOST' not found")))?
+            .parse::<IpAddr>()
+            .map_err(|_| ConfigError::Db(format!("Invalid IP: {prefix}HOST")))?;
+        let port = env::var(format!("{prefix}PORT"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}PORT' not found")))?
+            .parse::<u16>()
+            .map_err(|_| ConfigError::Db(format!("Invalid Integer: {prefix}PORT")))?;
+        let min_connections = env::var(format!("{prefix}MIN_CONNECTIONS"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}MIN_CONNECTIONS' not found")))?
+            .parse::<u32>()
+            .map_err(|_| ConfigError::Db(format!("Invalid Integer: {prefix}MIN_CONNECTIONS")))?;
+        let max_connections = env::var(format!("{prefix}MAX_CONNECTIONS"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}MAX_CONNECTIONS' not found")))?
+            .parse::<u32>()
+            .map_err(|_| ConfigError::Db(format!("Invalid Integer: {prefix}MAX_CONNECTIONS")))?;
+        let idle_timeout = Duration::from_secs(
+            env::var(format!("{prefix}IDLE_TIMEOUT"))
+                .map_err(|_| ConfigError::NotFound(format!("'{prefix}IDLE_TIMEOUT' not found")))?
+                .parse::<u64>()
+                .map_err(|_| ConfigError::Db(format!("Invalid Integer: {prefix}IDLE_TIMEOUT")))?,
+        );
+        let username = env::var(format!("{prefix}USERNAME"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}USERNAME' not found")))?;
+        let password = env::var(format!("{prefix}PASSWORD"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}PASSWORD' not found")))?;
+        let database = env::var(format!("{prefix}DATABASE"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}PASSWORD' not found")))?;
         Ok(Self {
             host,
             port,

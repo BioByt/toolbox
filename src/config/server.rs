@@ -3,6 +3,8 @@ use std::{
     net::{IpAddr, SocketAddr},
 };
 
+use super::{ConfigError, ConfigResult};
+
 #[derive(Debug)]
 pub struct ServerConfig {
     host: IpAddr,
@@ -10,9 +12,15 @@ pub struct ServerConfig {
 }
 
 impl ServerConfig {
-    pub fn from_env(prefix: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let host = env::var(format!("{prefix}HOST"))?.parse::<IpAddr>()?;
-        let port = env::var(format!("{prefix}PORT"))?.parse::<u16>()?;
+    pub fn with_prefix(prefix: &str) -> ConfigResult<Self> {
+        let host = env::var(format!("{prefix}HOST"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}HOST' not found")))?
+            .parse::<IpAddr>()
+            .map_err(|_| ConfigError::Db(format!("Invalid IP: {prefix}HOST")))?;
+        let port = env::var(format!("{prefix}PORT"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}PORT' not found")))?
+            .parse::<u16>()
+            .map_err(|_| ConfigError::Smtp(format!("Invalid Port: {prefix}PORT")))?;
         Ok(Self { host, port })
     }
 
