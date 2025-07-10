@@ -1,10 +1,9 @@
-use std::{env, net::IpAddr, time::Duration};
+use std::{env, time::Duration};
 
 use super::{ConfigError, ConfigResult};
 
 #[derive(Debug)]
 pub struct DbConfig {
-    host: IpAddr,
     addr: String,
     port: u16,
     min_connections: u32,
@@ -17,10 +16,6 @@ pub struct DbConfig {
 
 impl DbConfig {
     pub fn with_prefix(prefix: &str) -> ConfigResult<Self> {
-        let host = env::var(format!("{prefix}HOST"))
-            .map_err(|_| ConfigError::NotFound(format!("'{prefix}HOST' not found")))?
-            .parse::<IpAddr>()
-            .map_err(|_| ConfigError::Db(format!("Invalid IP: {prefix}HOST")))?;
         let addr = env::var(format!("{prefix}ADDR"))
             .map_err(|_| ConfigError::NotFound(format!("'{prefix}ADDR' not found")))?;
         let port = env::var(format!("{prefix}PORT"))
@@ -48,7 +43,6 @@ impl DbConfig {
         let database = env::var(format!("{prefix}DATABASE"))
             .map_err(|_| ConfigError::NotFound(format!("'{prefix}PASSWORD' not found")))?;
         Ok(Self {
-            host,
             addr,
             port,
             min_connections,
@@ -77,10 +71,6 @@ impl DbConfig {
 
     pub fn get_idle_timeout_duration(&self) -> Duration {
         self.idle_timeout
-    }
-
-    pub fn get_host(&self) -> IpAddr {
-        self.host
     }
 
     pub fn get_port(&self) -> u16 {
