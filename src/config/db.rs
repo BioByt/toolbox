@@ -5,6 +5,7 @@ use super::{ConfigError, ConfigResult};
 #[derive(Debug)]
 pub struct DbConfig {
     host: IpAddr,
+    addr: String,
     port: u16,
     min_connections: u32,
     max_connections: u32,
@@ -20,6 +21,8 @@ impl DbConfig {
             .map_err(|_| ConfigError::NotFound(format!("'{prefix}HOST' not found")))?
             .parse::<IpAddr>()
             .map_err(|_| ConfigError::Db(format!("Invalid IP: {prefix}HOST")))?;
+        let addr = env::var(format!("{prefix}ADDR"))
+            .map_err(|_| ConfigError::NotFound(format!("'{prefix}ADDR' not found")))?;
         let port = env::var(format!("{prefix}PORT"))
             .map_err(|_| ConfigError::NotFound(format!("'{prefix}PORT' not found")))?
             .parse::<u16>()
@@ -46,6 +49,7 @@ impl DbConfig {
             .map_err(|_| ConfigError::NotFound(format!("'{prefix}PASSWORD' not found")))?;
         Ok(Self {
             host,
+            addr,
             port,
             min_connections,
             max_connections,
@@ -59,7 +63,7 @@ impl DbConfig {
     pub fn get_database_url(&self) -> String {
         format!(
             "postgresql://{}:{}@{}:{}/{}",
-            self.username, self.password, self.host, self.port, self.database
+            self.username, self.password, self.addr, self.port, self.database
         )
     }
 
